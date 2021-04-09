@@ -23,6 +23,30 @@ var routes = [
     icon: "ni ni-folder-17 text-orange",
     layout: "/admin",
   },
+  {
+    path: "/users",
+    name: "Users",
+    icon: "ni ni-single-02 text-yellow",
+    layout: "/admin",
+  },
+  {
+    path: "/user-group",
+    name: "User Group",
+    icon: "ni ni-circle-08 text-green",
+    layout: "/admin",
+  },
+  {
+    path: "/logs",
+    name: "Logs",
+    icon: "ni ni-collection text-blue",
+    layout: "/admin",
+  },
+  {
+    path: "/setting",
+    name: "Setting",
+    icon: "ni ni-settings-gear-65 text-red",
+    layout: "/admin",
+  },
   // {
   //   path: "/maps",
   //   name: "Maps",
@@ -41,17 +65,5 @@ var routes = [
   //   icon: "ni ni-bullet-list-67 text-red",
   //   layout: "/admin",
   // },
-  {
-    path: "/login",
-    name: "Login",
-    icon: "ni ni-key-25 text-info",
-    layout: "/auth",
-  },
-  {
-    path: "/register",
-    name: "Register",
-    icon: "ni ni-circle-08 text-pink",
-    layout: "/auth",
-  },
 ];
 export default routes;

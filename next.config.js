@@ -6,7 +6,8 @@ const withFonts = require("next-fonts");
 const webpack = require("webpack");
 const path = require("path");
 
-module.exports = withFonts(
+module.exports =
+ withFonts(
   withCSS(
     withImages(
       withSass({
@@ -24,3 +25,11 @@ module.exports = withFonts(
     )
   )
 );
+
+module.exports = {
+  env: {
+    baseApiUrl: "http://localhost:3021",
+    // baseApiUrl: 'https://sf-ecf.sfund.id',
+  },
+}
+

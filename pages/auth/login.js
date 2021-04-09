@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter } from 'next/router'
 
 // reactstrap components
 import {
@@ -18,7 +19,45 @@ import {
 // layout for this page
 import Auth from "layouts/Auth.js";
 
+// import Auth API
+import {auth} from "./../../utils/api"
+
 function Login() {
+  const router = useRouter()
+
+  const [dataLogin, setDataLogin] = React.useState({
+    email:null,
+    password:null
+  })
+  
+
+  const onSubmit = () => {
+    if(!dataLogin.email && !dataLogin.password) {
+      console.log('tidak ada data')
+      return
+    }
+    auth.login(dataLogin)
+    .then(res => {
+      // console.log(res)
+      if(res.code == '202'){
+        localStorage.setItem('token', res.accessToken)
+        router.push('/admin/dashboard')
+      }else{
+        console.log('unauthorized')
+      }
+    })
+    .catch(err => console.log(err))
+  }
+
+  const handleChangeValue = (e) => {
+    const nama = e.target.name;
+    const value = e.target.value;
+
+    setDataLogin({
+      ...dataLogin,
+      [nama]: value,
+    })
+  }
   return (
     <>
       <Col lg="5" md="7">
@@ -74,6 +113,9 @@ function Login() {
                     placeholder="Email"
                     type="email"
                     autoComplete="new-email"
+                    name="email"
+                    required
+                    onChange={(e) => handleChangeValue(e)}
                   />
                 </InputGroup>
               </FormGroup>
@@ -87,12 +129,15 @@ function Login() {
                   <Input
                     placeholder="Password"
                     type="password"
+                    name="password"
                     autoComplete="new-password"
+                    onChange={(e) => handleChangeValue(e)}
+                    required
                   />
                 </InputGroup>
               </FormGroup>
               <div className="text-center">
-                <Button className="my-4" color="primary" type="button">
+                <Button className="my-4" color="primary" type="button" onClick={onSubmit}>
                   Sign in
                 </Button>
               </div>
