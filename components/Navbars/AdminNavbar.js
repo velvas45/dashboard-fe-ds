@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Router from 'next/router'
 // reactstrap components
 import {
   DropdownMenu,
@@ -18,7 +19,27 @@ import {
   Media,
 } from "reactstrap";
 
+// utils
+import {decrypt} from './../../utils/cryptoUtils'
+
 function AdminNavbar({ brandText }) {
+  const[users,setUsers] = React.useState(null)
+
+  React.useEffect(() => {
+    if(window.localStorage.getItem('users') !== null) {
+      setUsers(JSON.parse(decrypt(window.localStorage.getItem('users'))))
+    } else{
+      return
+    }
+  },[])
+
+  const logout = () => {
+    if(window.localStorage.getItem('token') !== null && window.localStorage.getItem('users') !== null){
+      window.localStorage.clear();
+      Router.push('/auth/login')
+    }
+  }
+
   return (
     <>
       <Navbar className="navbar-top navbar-dark" expand="md" id="navbar-main">
@@ -52,7 +73,7 @@ function AdminNavbar({ brandText }) {
                   </span>
                   <Media className="ml-2 d-none d-lg-block">
                     <span className="mb-0 text-sm font-weight-bold">
-                      Jessica Jones
+                      {users?.email || ""}
                     </span>
                   </Media>
                 </Media>
@@ -88,7 +109,7 @@ function AdminNavbar({ brandText }) {
                 <DropdownItem divider />
                 <DropdownItem href="#pablo" onClick={(e) => e.preventDefault()}>
                   <i className="ni ni-user-run" />
-                  <span>Logout</span>
+                  <span onClick={logout}>Logout</span>
                 </DropdownItem>
               </DropdownMenu>
             </UncontrolledDropdown>

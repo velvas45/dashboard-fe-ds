@@ -24,12 +24,17 @@ module.exports =
       })
     )
   )
-);
-
-module.exports = {
+),{
   env: {
     baseApiUrl: "http://localhost:3021",
     // baseApiUrl: 'https://sf-ecf.sfund.id',
   },
-}
+};
+
+// module.exports = {
+//   env: {
+//     baseApiUrl: "http://localhost:3021",
+//     // baseApiUrl: 'https://sf-ecf.sfund.id',
+//   },
+// }
 

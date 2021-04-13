@@ -17,6 +17,11 @@ function Admin(props) {
     document.documentElement.scrollTop = 0;
     document.scrollingElement.scrollTop = 0;
     mainContentRef.current.scrollTop = 0;
+    // check ada user apa tidak dan mempunyai access
+    if(window.localStorage.getItem('token') === null){
+      router.push("/auth/login");
+    }
+
   }, []);
   const getBrandText = () => {
     for (let i = 0; i < routes.length; i++) {

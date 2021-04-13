@@ -22,86 +22,48 @@ import Auth from "layouts/Auth.js";
 // import Auth API
 import {auth} from "./../../utils/api"
 
+// validation hook form
+import { useForm, Controller } from "react-hook-form";
+
+// utils
+import {encrypt} from './../../utils/cryptoUtils'
+
 function Login() {
+  const { register, handleSubmit, control, formState: { errors }} = useForm();
   const router = useRouter()
 
-  const [dataLogin, setDataLogin] = React.useState({
-    email:null,
-    password:null
-  })
+  React.useEffect(() => {
+    // check apakah user sudah login apa tidak
+    if(window.localStorage.getItem('token') !== null){
+      router.push("/auth/dashboard");
+    }
+  },[])
   
 
-  const onSubmit = () => {
-    if(!dataLogin.email && !dataLogin.password) {
-      console.log('tidak ada data')
-      return
-    }
-    auth.login(dataLogin)
+  const handleOnsubmit = (data) => {
+    auth.login(data)
     .then(res => {
       // console.log(res)
-      if(res.code == '202'){
-        localStorage.setItem('token', res.accessToken)
+      if(res.status >= 200 && res.status < 300){
+        console.log(res)
+        const dataUser = res?.data?.data
+        localStorage.setItem('users', encrypt(JSON.stringify(dataUser)))
+        localStorage.setItem('token', encrypt(JSON.stringify(res?.data?.accessToken)))
         router.push('/admin/dashboard')
-      }else{
-        console.log('unauthorized')
       }
     })
     .catch(err => console.log(err))
   }
 
-  const handleChangeValue = (e) => {
-    const nama = e.target.name;
-    const value = e.target.value;
-
-    setDataLogin({
-      ...dataLogin,
-      [nama]: value,
-    })
-  }
   return (
     <>
       <Col lg="5" md="7">
         <Card className="bg-secondary shadow border-0">
-          {/* <CardHeader className="bg-transparent pb-5">
-            <div className="text-muted text-center mt-2 mb-3">
-              <small>Sign in with</small>
-            </div>
-            <div className="btn-wrapper text-center">
-              <Button
-                className="btn-neutral btn-icon"
-                color="default"
-                href="#pablo"
-                onClick={(e) => e.preventDefault()}
-              >
-                <span className="btn-inner--icon">
-                  <img
-                    alt="..."
-                    src={require("assets/img/icons/common/github.svg")}
-                  />
-                </span>
-                <span className="btn-inner--text">Github</span>
-              </Button>
-              <Button
-                className="btn-neutral btn-icon"
-                color="default"
-                href="#pablo"
-                onClick={(e) => e.preventDefault()}
-              >
-                <span className="btn-inner--icon">
-                  <img
-                    alt="..."
-                    src={require("assets/img/icons/common/google.svg")}
-                  />
-                </span>
-                <span className="btn-inner--text">Google</span>
-              </Button>
-            </div>
-          </CardHeader> */}
           <CardBody className="px-lg-5 py-lg-5">
             <div className="text-center text-muted mb-4">
               <small>Sign in</small>
             </div>
-            <Form role="form">
+            <Form role="form" onSubmit={handleSubmit(handleOnsubmit)}>
               <FormGroup className="mb-3">
                 <InputGroup className="input-group-alternative">
                   <InputGroupAddon addonType="prepend">
@@ -109,16 +71,17 @@ function Login() {
                       <i className="ni ni-email-83" />
                     </InputGroupText>
                   </InputGroupAddon>
-                  <Input
-                    placeholder="Email"
-                    type="email"
-                    autoComplete="new-email"
+                  <Controller
                     name="email"
-                    required
-                    onChange={(e) => handleChangeValue(e)}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => <Input type="email" placeholder="email" {...field} />}
                   />
                 </InputGroup>
               </FormGroup>
+              {errors.email && (
+                <p className="text-danger">Email is required</p>
+              )}
               <FormGroup>
                 <InputGroup className="input-group-alternative">
                   <InputGroupAddon addonType="prepend">
@@ -126,20 +89,19 @@ function Login() {
                       <i className="ni ni-lock-circle-open" />
                     </InputGroupText>
                   </InputGroupAddon>
-                  <Input
-                    placeholder="Password"
-                    type="password"
+                  <Controller
                     name="password"
-                    autoComplete="new-password"
-                    onChange={(e) => handleChangeValue(e)}
-                    required
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => <Input type="password" placeholder="password" {...field} />}
                   />
                 </InputGroup>
               </FormGroup>
+              {errors.password && (
+                <p className="text-danger">Password is required</p>
+              )}
               <div className="text-center">
-                <Button className="my-4" color="primary" type="button" onClick={onSubmit}>
-                  Sign in
-                </Button>
+                <input className="btn my-4 btn-primary text-white" type="submit" />
               </div>
             </Form>
           </CardBody>

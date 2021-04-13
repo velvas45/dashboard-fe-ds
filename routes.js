@@ -11,18 +11,20 @@ var routes = [
   //   icon: "ni ni-planet text-blue",
   //   layout: "/admin",
   // },
-  {
-    path: "/video-recorder",
-    name: "Video Recorder",
-    icon: "ni ni-camera-compact text-blue",
-    layout: "/admin",
-  },
-  {
-    path: "/digital-signature",
-    name: "Digital Signature",
-    icon: "ni ni-folder-17 text-orange",
-    layout: "/admin",
-  },
+  // {
+  //   path: "/video-recorder",
+  //   name: "Video Recorder",
+  //   icon: "ni ni-camera-compact text-blue",
+  //   layout: "/admin",
+
+  // },
+  // {
+  //   path: "/digital-signature",
+  //   name: "Digital Signature",
+  //   icon: "ni ni-folder-17 text-orange",
+  //   layout: "/admin",
+
+  // },
   {
     path: "/users",
     name: "Users",
