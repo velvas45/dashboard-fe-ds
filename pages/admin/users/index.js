@@ -1,5 +1,6 @@
 import React from "react";
 import Routes from "next/router";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 // reactstrap components
 import {
   Button,
@@ -13,10 +14,8 @@ import {
   FormGroup,
   Label,
   Input,
-  FormText,
   Col,
   Alert,
-  CardImg,
 } from "reactstrap";
 // rc-table components
 import Table from "rc-table";
@@ -33,10 +32,15 @@ import { useForm, Controller } from "react-hook-form";
 
 // import Auth API
 import { user } from "../../../utils/api";
+import { peruri } from "./../../../utils/api";
 
 // import utils
 import { decrypt } from "../../../utils/cryptoUtils";
 import { formatIsoDate } from "../../../utils/date/dateFormat";
+
+import InputHooks from "./../../../components/formInput/Input";
+
+import fields from "./fields";
 
 const schema = yup.object().shape({
   firstName: yup.string().required("Tidak Boleh Kosong"),
@@ -47,6 +51,13 @@ const schema = yup.object().shape({
     .max(12, "Nomor telephone maksimal 12 angka")
     .min(8, "Nomor telephone minimal 8 angka"),
   email: yup.string().email().required("Tidak Boleh Kosong"),
+  password: yup
+    .string()
+    .max(20, "Maksimal karakter 20")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      " Password min 8 letter, must contain symbols, numbers, uppercase letters, lowercase letters"
+    ),
   address: yup.string().required("Tidak Boleh Kosong"),
   type: yup.string(),
   ktp: yup
@@ -57,18 +68,17 @@ const schema = yup.object().shape({
   peruri_type: yup.string().required("Tidak Boleh Kosong"),
   npwp: yup.string().max(16, "Nomor KTP maksimal 16 karakter"),
   npwpPhoto: yup.string(),
-  // selfPhoto: yup.string().required('Tidak Boleh Kosong'),
-  // city: yup.string().required('Tidak Boleh Kosong'),
-  // province: yup.string().required('Tidak Boleh Kosong'),
-  // gender: yup.string().required('Tidak Boleh Kosong'),
-  // placeofBirth: yup.string().required('Tidak Boleh Kosong'),
-  // dateofBirth: yup.string().required('Tidak Boleh Kosong'),
-  // orgUnit: yup.string().required('Tidak Boleh Kosong'),
-  // workUnit: yup.string().required('Tidak Boleh Kosong'),
-  // position: yup.string().required('Tidak Boleh Kosong')
+  city: yup.string().required("Tidak Boleh Kosong"),
+  province: yup.string().required("Tidak Boleh Kosong"),
+  gender: yup.string().required("Tidak Boleh Kosong"),
+  placeofBirth: yup.string().required("Tidak Boleh Kosong"),
+  dateofBirth: yup.string().required("Tidak Boleh Kosong"),
+  // orgUnit: yup.string().required("Tidak Boleh Kosong"),
+  // workUnit: yup.string().required("Tidak Boleh Kosong"),
+  // position: yup.string().required("Tidak Boleh Kosong"),
 });
 
-const readAsDataURL = (file, cb) => {
+const readAsDataURL = (file) => {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
     fileReader.readAsDataURL(file);
@@ -84,6 +94,9 @@ const readAsDataURL = (file, cb) => {
 };
 
 const Users = (props) => {
+  const [users, setUsers] = React.useState(null);
+  const [token, setToken] = React.useState(null);
+  const [showPassword, setShowPassword] = React.useState(false);
   const [tooltipOpen, setTooltipOpen] = React.useState(false);
   const [dataApi, setDataApi] = React.useState(null);
   const [modal, setModal] = React.useState(false);
@@ -103,10 +116,12 @@ const Users = (props) => {
   });
 
   const {
+    register,
     handleSubmit,
     control,
     setValue,
     formState: { errors },
+    reset,
   } = useForm({
     mode: "onBlur",
     resolver: yupResolver(schema),
@@ -198,20 +213,39 @@ const Users = (props) => {
       dataIndex: "",
       key: "g",
       width: "14.2%",
-      render() {
+      render(e, row, index) {
+        // console.log(e, row, index);
+        const email = row.email;
         return (
           <div className="">
-            <Button color="warning" onClick={toggle} id="toolTipEdit">
+            <Button color="warning" onClick={toggle}>
               <i className="ni ni-collection"></i>
             </Button>
-            <Tooltip
-              placement="top"
-              isOpen={tooltipOpen}
-              target="toolTipEdit"
-              toggle={tooltipToggle}
-            >
-              Edit
-            </Tooltip>
+            <Modal isOpen={modal} toggle={toggle}>
+              <ModalHeader toggle={toggle}>Modal title</ModalHeader>
+              <ModalBody>
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+                eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+                enim ad minim veniam, quis nostrud exercitation ullamco laboris
+                nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+                in reprehenderit in voluptate velit esse cillum dolore eu fugiat
+                nulla pariatur. Excepteur sint occaecat cupidatat non proident,
+                sunt in culpa qui officia deserunt mollit anim id est laborum.
+              </ModalBody>
+              <ModalFooter>
+                <Button color="primary" onClick={toggle}>
+                  Do Something
+                </Button>{" "}
+                <Button color="secondary" onClick={toggle}>
+                  Cancel
+                </Button>
+              </ModalFooter>
+            </Modal>
+
+            <Button color="primary" onClick={() => onVerification(email)}>
+              <i className="fas fa-user-check"></i>
+            </Button>
+
             <Modal isOpen={modal} toggle={toggle}>
               <ModalHeader toggle={toggle}>Modal title</ModalHeader>
               <ModalBody>
@@ -272,19 +306,22 @@ const Users = (props) => {
 
   React.useEffect(() => {
     if (window.localStorage.getItem("token") !== null) {
+      if (window.localStorage.getItem("users") !== null) {
+        setUsers(JSON.parse(decrypt(window.localStorage.getItem("users"))));
+      }
       const data = {
         where: {},
         orderBy: "DESC",
       };
       const token = JSON.parse(decrypt(window.localStorage.getItem("token")));
-      console.log(token);
+
+      setToken(token);
+
       user
         .allUsers(data, token)
         .then((res) => {
           if (res.status == "201") {
             setDataApi(res?.data?.data);
-            console.log(res?.data?.data);
-            // console.log(res)
           }
         })
         .catch((err) => console.log(err));
@@ -292,42 +329,67 @@ const Users = (props) => {
   }, []);
 
   const toggle = () => setModal(!modal);
-  const newUser = () => setModalUser(!modalUser);
+  const newUser = () => {
+    setModalUser(!modalUser);
+    if (modalUser) {
+      reset();
+    }
+  };
   const tooltipToggle = () => setTooltipOpen(!tooltipOpen);
 
-  const onVerification = () => Routes.push("/admin/digital-signature");
+  const onVerification = (email) => {
+    const data = {
+      email,
+    };
+    peruri
+      .signatureLink(data, token)
+      .then((res) => console.log(res))
+      .catch((err) => console.log(err));
+  };
 
-  const onSubmit = (data) => console.log(data);
+  const onSubmit = (values) => {
+    const data = {
+      first_name: values.firstName,
+      last_name: values.lastName,
+      phone: values.phone,
+      email: values.email,
+      password: "",
+      address: values.address,
+      ktp: values.ktp,
+      ktpPhoto: values.ktpPhoto,
+      peruri_type: values.peruri_type,
+      npwp: values.npwp,
+      npwpPhoto: values.npwpPhoto,
+      city: values.city,
+      province: values.province,
+      gender: values.gender,
+      placeofBirth: values.placeofBirth,
+      dateofBirth: values.dateofBirth,
+      orgUnit: "",
+      workUnit: "",
+      position: "",
+    };
+
+    peruri
+      .peruriRegistration(data, token)
+      .then((res) => console.log(res))
+      .catch((err) => console.log(err));
+  };
 
   const handleFileImages = async (e, type) => {
-    setIsCustomError({
-      ...isCustomError,
-      fileSizeSelf: false,
-      fileTypeSelf: false,
-      fileSizeNpwp: false,
-      fileTypeNpwp: false,
-      fileSizeKtp: false,
-      fileTypeKtp: false,
-    });
-
     const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png"];
     const file = e.target.files[0];
     if (!file) return;
-    console.log(file);
 
     if (type === "ktp") {
       if (SUPPORTED_FORMATS.includes(file.type)) {
         if (file.size <= 2097152) {
+          const base64 = await readAsDataURL(file);
           setIsCustomError({
             ...isCustomError,
-            fileSizeSelf: false,
-            fileTypeSelf: false,
-            fileSizeNpwp: false,
-            fileTypeNpwp: false,
             fileSizeKtp: false,
             fileTypeKtp: false,
           });
-          const base64 = await readAsDataURL(file);
           setBase64Url({
             ...base64Url,
             ktp: base64,
@@ -337,10 +399,6 @@ const Users = (props) => {
         } else {
           setIsCustomError({
             ...isCustomError,
-            fileSizeSelf: false,
-            fileTypeSelf: false,
-            fileSizeNpwp: false,
-            fileTypeNpwp: false,
             fileSizeKtp: true,
             fileTypeKtp: false,
           });
@@ -348,10 +406,6 @@ const Users = (props) => {
       } else {
         setIsCustomError({
           ...isCustomError,
-          fileSizeSelf: false,
-          fileTypeSelf: false,
-          fileSizeNpwp: false,
-          fileTypeNpwp: false,
           fileSizeKtp: false,
           fileTypeKtp: true,
         });
@@ -361,12 +415,8 @@ const Users = (props) => {
         if (file.size <= 2097152) {
           setIsCustomError({
             ...isCustomError,
-            fileSizeSelf: false,
-            fileTypeSelf: false,
             fileSizeNpwp: false,
             fileTypeNpwp: false,
-            fileSizeKtp: false,
-            fileTypeKtp: false,
           });
           const base64 = await readAsDataURL(file);
           setBase64Url({
@@ -378,23 +428,15 @@ const Users = (props) => {
         } else {
           setIsCustomError({
             ...isCustomError,
-            fileSizeSelf: false,
-            fileTypeSelf: false,
             fileSizeNpwp: true,
             fileTypeNpwp: false,
-            fileSizeKtp: false,
-            fileTypeKtp: false,
           });
         }
       } else {
         setIsCustomError({
           ...isCustomError,
-          fileSizeSelf: false,
-          fileTypeSelf: false,
           fileSizeNpwp: false,
           fileTypeNpwp: true,
-          fileSizeKtp: false,
-          fileTypeKtp: false,
         });
       }
     } else if (type === "selfPhoto") {
@@ -404,38 +446,25 @@ const Users = (props) => {
             ...isCustomError,
             fileSizeSelf: false,
             fileTypeSelf: false,
-            fileSizeNpwp: false,
-            fileTypeNpwp: false,
-            fileSizeKtp: false,
-            fileTypeKtp: false,
           });
           const base64 = await readAsDataURL(file);
           setBase64Url({
             ...base64Url,
             npwp: base64,
           });
-          // console.log(base64)
-          setValue("npwpPhoto", base64.split(",")[1], { shouldValidate: true });
+          setValue("selfPhoto", base64.split(",")[1], { shouldValidate: true });
         } else {
           setIsCustomError({
             ...isCustomError,
-            fileSizeSelf: false,
+            fileSizeSelf: true,
             fileTypeSelf: false,
-            fileSizeNpwp: true,
-            fileTypeNpwp: false,
-            fileSizeKtp: false,
-            fileTypeKtp: false,
           });
         }
       } else {
         setIsCustomError({
           ...isCustomError,
           fileSizeSelf: false,
-          fileTypeSelf: false,
-          fileSizeNpwp: false,
-          fileTypeNpwp: true,
-          fileSizeKtp: false,
-          fileTypeKtp: false,
+          fileTypeSelf: true,
         });
       }
     }
@@ -456,98 +485,39 @@ const Users = (props) => {
               <ModalHeader toggle={newUser}>Add New User</ModalHeader>
               <ModalBody>
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                  <FormGroup row>
-                    <Label for="email" sm={4}>
-                      Email
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        name="email"
-                        control={control}
-                        render={({ field }) => (
-                          <Input type="email" placeholder="Email" {...field} />
-                        )}
-                      />
-                      {errors.email && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.email?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-
-                  <FormGroup row>
-                    <Label for="firstName" sm={4}>
-                      First Name
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        id="firstName"
-                        name="firstName"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            type="text"
-                            placeholder="Masukkan Nama Depan..."
-                            {...field}
-                          />
-                        )}
-                      />
-                      {errors.firstName && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.firstName?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-                  <FormGroup row>
-                    <Label for="lastName" sm={4}>
-                      Last Name
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        id="lastName"
-                        name="lastName"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            type="text"
-                            placeholder="Masukkan Nama Belakang..."
-                            {...field}
-                          />
-                        )}
-                      />
-                      {errors.lastName && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.lastName?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-                  <FormGroup row>
-                    <Label for="phone" sm={4}>
-                      No. Telephone
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        name="phone"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            type="text"
-                            id="phone"
-                            placeholder="+62813999828"
-                            {...field}
-                          />
-                        )}
-                      />
-                      {errors.phone && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.phone?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
+                  {fields({
+                    control,
+                    errors,
+                    isCustomError,
+                    base64Url,
+                    handleFileImages,
+                    clearImage,
+                    Controller,
+                  }).map((data, idx) => {
+                    return (
+                      <FormGroup row key={idx}>
+                        <InputHooks
+                          control={data.control}
+                          label={data.label}
+                          fieldName={data.fieldName}
+                          colSmLabel={data.colSmLabel}
+                          colSmInput={data.colSmInput}
+                          plchldr={data.plchldr}
+                          errors={data.errors}
+                          type={data.type}
+                          fileData={data.fileData}
+                          fieldFiledData={data.fieldFiledData}
+                          customError={data.customError || ""}
+                          onChange={data.onChange}
+                          onClick={data.onClick}
+                          errorType={data.errorType}
+                          errorSize={data.errorSize}
+                          Controller={data.Controller}
+                          dataSelect={data.dataSelect}
+                        />
+                      </FormGroup>
+                    );
+                  })}
                   <Controller
                     id="type"
                     name="type"
@@ -562,310 +532,6 @@ const Users = (props) => {
                     control={control}
                     render={({ field }) => <Input type="hidden" {...field} />}
                   />
-                  <FormGroup row>
-                    <Label for="address" sm={4}>
-                      Address
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        id="address"
-                        name="address"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            type="textarea"
-                            name="text"
-                            placeholder="Your Address.."
-                            {...field}
-                          />
-                        )}
-                      />
-                      {errors.address && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.address?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-                  <FormGroup row>
-                    <Label for="phone" sm={4}>
-                      No. KTP
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        name="ktp"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            type="text"
-                            id="ktp"
-                            placeholder="17318..."
-                            {...field}
-                          />
-                        )}
-                      />
-                      {errors.ktp && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.ktp?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-                  <FormGroup row>
-                    <Label for="ktpPhoto" sm={4}>
-                      Photo Ktp
-                    </Label>
-                    <Col sm={8}>
-                      {base64Url.ktp && (
-                        <>
-                          <Button close onClick={() => clearImage("ktp")} />
-                          <CardImg
-                            top
-                            width="100%"
-                            className="bg-dark"
-                            src={base64Url.ktp}
-                            alt="Card image cap"
-                          />
-                        </>
-                      )}
-                      {!base64Url.ktp && (
-                        <Controller
-                          name="ktpPhoto"
-                          control={control}
-                          render={({ field }) => (
-                            <Input
-                              type="file"
-                              id="ktpPhoto"
-                              onChange={(e) => handleFileImages(e, "ktp")}
-                            />
-                          )}
-                        />
-                      )}
-                      {isCustomError.fileSizeKtp && (
-                        <Alert color="danger" className="mt-3">
-                          Mohon Upload File dibawah 2mb
-                        </Alert>
-                      )}
-                      {isCustomError.fileTypeKtp && (
-                        <Alert color="danger" className="mt-3">
-                          Mohon upload file dengan type png
-                        </Alert>
-                      )}
-                      {errors.ktpPhoto && (
-                        <FormText color="danger" className="mt-3">
-                          {errors.ktpPhoto?.message}
-                        </FormText>
-                      )}
-                    </Col>
-                  </FormGroup>
-                  <FormGroup row>
-                    <Label for="phone" sm={4}>
-                      NPWP
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        name="npwp"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            type="text"
-                            id="npwp"
-                            placeholder="17318..."
-                            {...field}
-                          />
-                        )}
-                      />
-                      {errors.ktp && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.ktp?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-
-                  <FormGroup row>
-                    <Label for="npwpPhoto" sm={4}>
-                      Photo NPWP
-                    </Label>
-                    <Col sm={8}>
-                      {base64Url.npwp && (
-                        <>
-                          <Button close onClick={() => clearImage("npwp")} />
-                          <CardImg
-                            top
-                            width="100%"
-                            className="bg-dark"
-                            src={base64Url.npwp}
-                            alt="Card image cap"
-                          />
-                        </>
-                      )}
-                      {!base64Url.npwp && (
-                        <Controller
-                          name="npwpPhoto"
-                          control={control}
-                          render={({ field }) => (
-                            <Input
-                              type="file"
-                              id="npwpPhoto"
-                              onChange={(e) => handleFileImages(e, "npwp")}
-                            />
-                          )}
-                        />
-                      )}
-                      {isCustomError.fileSizeNpwp && (
-                        <Alert color="danger" className="mt-3">
-                          Mohon Upload File dibawah 2mb
-                        </Alert>
-                      )}
-                      {isCustomError.fileTypeNpwp && (
-                        <Alert color="danger" className="mt-3">
-                          Mohon upload file dengan type png
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-
-                  <FormGroup row>
-                    <Label for="selfPhoto" sm={4}>
-                      Foto Selfie
-                    </Label>
-                    <Col sm={8}>
-                      {base64Url.selfPhoto && (
-                        <>
-                          <Button
-                            close
-                            onClick={() => clearImage("selfPhoto")}
-                          />
-                          <CardImg
-                            top
-                            width="100%"
-                            className="bg-dark"
-                            src={base64Url.selfPhoto}
-                            alt="Card image cap"
-                          />
-                        </>
-                      )}
-                      {!base64Url.selfPhoto && (
-                        <Controller
-                          name="selfPhoto"
-                          control={control}
-                          render={({ field }) => (
-                            <Input
-                              type="file"
-                              id="selfPhoto"
-                              onChange={(e) => handleFileImages(e, "selfPhoto")}
-                            />
-                          )}
-                        />
-                      )}
-                      {isCustomError.fileSizeSelf && (
-                        <Alert color="danger" className="mt-3">
-                          Mohon Upload File dibawah 2mb
-                        </Alert>
-                      )}
-                      {isCustomError.fileTypeSelf && (
-                        <Alert color="danger" className="mt-3">
-                          Mohon upload file dengan type png
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label for="exampleSelectMulti">City</Label>
-                    <Input type="select" name="selectMulti">
-                      <option>1</option>
-                      <option>2</option>
-                      <option>3</option>
-                      <option>4</option>
-                      <option>5</option>
-                    </Input>
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label for="exampleSelectMulti">Gender</Label>
-                    <Input type="select" name="selectMulti">
-                      <option>select Gender</option>
-                      <option>Man</option>
-                      <option>Women</option>
-                    </Input>
-                  </FormGroup>
-
-                  <FormGroup row>
-                    <Label for="province" sm={4}>
-                      Province
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        name="province"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            type="text"
-                            id="province"
-                            placeholder="Enter your province..."
-                            {...field}
-                          />
-                        )}
-                      />
-                      {errors.province && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.province?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-
-                  <FormGroup row>
-                    <Label for="placeOfBirth" sm={4}>
-                      Place Of Birth
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        name="placeOfBirth"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            type="text"
-                            id="placeOfBirth"
-                            placeholder="Enter your place of birth..."
-                            {...field}
-                          />
-                        )}
-                      />
-                      {errors.placeOfBirth && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.placeOfBirth?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
-
-                  <FormGroup row>
-                    <Label for="dateOfBirth" sm={4}>
-                      Date Of Birth
-                    </Label>
-                    <Col sm={8}>
-                      <Controller
-                        name="dateOfBirth"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            type="date"
-                            id="dateOfBirth"
-                            placeholder="Enter your date of birth..."
-                            {...field}
-                          />
-                        )}
-                      />
-                      {errors.placeOfBirth && (
-                        <Alert color="danger" className="mt-3">
-                          {errors.placeOfBirth?.message}
-                        </Alert>
-                      )}
-                    </Col>
-                  </FormGroup>
 
                   <FormGroup check row>
                     <Col sm={16} className="text-center">
@@ -891,9 +557,7 @@ const Users = (props) => {
               </ModalFooter> */}
             </Modal>
 
-            <Button color="warning" onClick={onVerification}>
-              Kyc Verification
-            </Button>
+            <Button color="warning">Kyc Verification</Button>
           </div>
         </div>
         <div className="row justify-content-center">

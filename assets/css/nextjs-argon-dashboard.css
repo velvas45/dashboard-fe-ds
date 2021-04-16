@@ -16179,4 +16179,31 @@ button:focus, :focus {
 .table .badge i {
   margin-right: 10px; }
 
-/*# sourceMappingURL=nextjs-argon-dashboard.css.map */
+.videoContainer {
+  position: relative;
+  width: 100%; }
+  .videoContainer video {
+    width: 100%;
+    height: 50vh;
+    border: 2px solid rgba(163, 157, 157, 0);
+    border-radius: 12px;
+    -webkit-border-radius: 12px;
+    -moz-border-radius: 12px;
+    -ms-border-radius: 12px;
+    -o-border-radius: 12px; }
+  .videoContainer .information {
+    width: 50%;
+    position: absolute;
+    margin: 0 auto;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    border-radius: 0.25rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    color: #fff;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 1.5rem; }
+
+.header {
+  background: url(require("assets/img/brand/dignital-signature.jpg")); }

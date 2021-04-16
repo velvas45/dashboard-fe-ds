@@ -5,11 +5,11 @@ import { Container } from "reactstrap";
 // core components
 import AdminNavbar from "components/Navbars/AdminNavbar.js";
 import AdminFooter from "components/Footers/AdminFooter.js";
-import Sidebar from "components/Sidebar/Sidebar.js";
+import KycSidebar from "components/Sidebar/KycSidebar.js";
 
 import routes from "routes.js";
 
-function Admin(props) {
+function Kyc(props) {
   // used for checking current route
   const router = useRouter();
   let mainContentRef = React.createRef();
@@ -32,7 +32,7 @@ function Admin(props) {
   };
   return (
     <>
-      <Sidebar
+      <KycSidebar
         {...props}
         routes={routes}
         logo={{
@@ -40,10 +40,11 @@ function Admin(props) {
           imgSrc: require("assets/img/brand/nextjs_argon_black.png"),
           imgAlt: "...",
         }}
+        nameSidebar="Roland"
       />
       <div className="main-content" ref={mainContentRef}>
         <AdminNavbar {...props} brandText={getBrandText()} />
-        {props.children}
+        <div className="digital-signature">{props.children}</div>
         <Container fluid>
           <AdminFooter />
         </Container>
@@ -52,4 +53,4 @@ function Admin(props) {
   );
 }
 
-export default Admin;
+export default Kyc;

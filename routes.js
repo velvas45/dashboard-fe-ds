@@ -18,13 +18,12 @@ var routes = [
   //   layout: "/admin",
 
   // },
-  // {
-  //   path: "/digital-signature",
-  //   name: "Digital Signature",
-  //   icon: "ni ni-folder-17 text-orange",
-  //   layout: "/admin",
-
-  // },
+  {
+    path: "/digital-signature",
+    name: "Digital Signature",
+    icon: "ni ni-folder-17 text-orange",
+    layout: "/kyc",
+  },
   {
     path: "/users",
     name: "Users",

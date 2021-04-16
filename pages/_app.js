@@ -9,7 +9,6 @@ import PageChange from "components/PageChange/PageChange.js";
 import "assets/plugins/nucleo/css/nucleo.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "assets/scss/nextjs-argon-dashboard.scss";
-// import "./../styles/antd.less";
 
 Router.events.on("routeChangeStart", (url) => {
   console.log(`Loading: ${url}`);
